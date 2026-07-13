@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>STS Reviewer — Lightbox Study Deck</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg:#0A0F1A;
+    --panel:#101827;
+    --panel2:#151F32;
+    --glow:#6FE3D6;
+    --glow-dim: rgba(111,227,214,0.25);
+    --amber:#F2B84B;
+    --text:#EAF0F2;
+    --muted:#8CA0AE;
+    --danger:#F2705B;
+    --good:#7BDB8F;
+    --line: rgba(111,227,214,0.18);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: radial-gradient(circle at 20% 0%, #0F1E2B 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+    padding: 28px 16px 60px;
+  }
+  .wrap{max-width: 880px; margin: 0 auto;}
+
+  .masthead{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 14px; margin-bottom: 22px;
+    flex-wrap: wrap; gap: 10px;
+  }
+  .masthead .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px; letter-spacing: 0.14em; color: var(--glow);
+    text-transform: uppercase;
+  }
+  .masthead h1{
+    margin: 4px 0 0; font-size: 26px; font-weight: 700; letter-spacing: -0.01em;
+  }
+  .masthead .sub{ color:var(--muted); font-size: 13px; margin-top:2px; font-family:'IBM Plex Mono',monospace;}
+
+  .tabs{ display:flex; gap:8px; margin-bottom: 22px; flex-wrap:wrap;}
+  .tab{
+    font-family:'IBM Plex Mono', monospace; font-size: 12.5px; letter-spacing:0.04em;
+    padding: 9px 16px; border-radius: 999px; cursor:pointer; user-select:none;
+    border: 1px solid var(--line); color: var(--muted); background: var(--panel);
+    transition: all .15s ease;
+  }
+  .tab:hover{ color: var(--text); border-color: var(--glow); }
+  .tab.active{ background: var(--glow); color:#04211D; border-color:var(--glow); font-weight:600; }
+
+  .panel{ display:none; }
+  .panel.active{ display:block; animation: fade .25s ease; }
+  @keyframes fade{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ---- Lightbox Flashcard ---- */
+  .lightbox{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 6px;
+    box-shadow: 0 0 0 1px rgba(111,227,214,0.06), 0 20px 60px -20px rgba(0,0,0,0.6);
+  }
+  .lightbox-inner{
+    background: linear-gradient(180deg, #0C141F, #0A101B);
+    border-radius: 10px;
+    min-height: 260px;
+    padding: 34px 28px;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    position: relative;
+    border: 1px solid rgba(111,227,214,0.12);
+    box-shadow: inset 0 0 40px rgba(111,227,214,0.05);
+    cursor: pointer;
+  }
+  .lightbox-inner::before{
+    content:""; position:absolute; inset:10px;
+    border: 1px dashed rgba(111,227,214,0.15); border-radius: 6px; pointer-events:none;
+  }
+  .card-label{
+    position:absolute; top: 12px; left: 16px; font-family:'IBM Plex Mono',monospace;
+    font-size: 10.5px; color: var(--glow); letter-spacing: 0.1em;
+  }
+  .card-text{ font-size: 19px; line-height:1.5; max-width: 620px; }
+  .card-text.answer{ color: var(--amber); font-size: 17px; }
+  .hint{ position:absolute; bottom:10px; right:14px; font-size:10px; color:var(--muted); font-family:'IBM Plex Mono',monospace;}
+
+  .deck-controls{
+    display:flex; align-items:center; justify-content:space-between; margin-top: 16px; gap: 10px; flex-wrap:wrap;
+  }
+  .btnrow{ display:flex; gap:8px; }
+  button.ctrl{
+    font-family:'IBM Plex Mono', monospace; font-size: 12.5px;
+    background: var(--panel2); color: var(--text); border: 1px solid var(--line);
+    padding: 10px 16px; border-radius: 8px; cursor:pointer; transition: all .15s ease;
+  }
+  button.ctrl:hover{ border-color: var(--glow); color: var(--glow); }
+  button.ctrl.primary{ background: var(--glow); color:#04211D; border-color:var(--glow); font-weight:600;}
+  .counter{ font-family:'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted);}
+
+  /* ---- Fill-blank & Mock test ---- */
+  .qcard{
+    background: var(--panel); border:1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; margin-bottom: 14px;
+  }
+  .qnum{ font-family:'IBM Plex Mono',monospace; color:var(--glow); font-size:12px; margin-bottom:6px; letter-spacing:.05em;}
+  .qtext{ font-size: 15.5px; margin-bottom: 12px; line-height:1.5;}
+  input[type=text]{
+    width:100%; background:#0B121D; border:1px solid var(--line); color:var(--text);
+    padding:10px 12px; border-radius:8px; font-family:'IBM Plex Sans',sans-serif; font-size:14px;
+  }
+  input[type=text]:focus{ outline:none; border-color:var(--glow); }
+  .choice{
+    display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:8px;
+    cursor:pointer; margin-bottom:6px; border:1px solid transparent; font-size:14.5px;
+  }
+  .choice:hover{ background: rgba(111,227,214,0.06); }
+  .choice input{ accent-color: var(--glow); }
+  .choice.correct{ background: rgba(123,219,143,0.12); border-color: var(--good); }
+  .choice.wrong{ background: rgba(242,112,91,0.12); border-color: var(--danger); }
+
+  .feedback{ font-size:13px; margin-top:8px; font-family:'IBM Plex Mono',monospace; }
+  .feedback.good{ color: var(--good); }
+  .feedback.bad{ color: var(--danger); }
+
+  .tf-row{ display:flex; gap:10px; margin-top:6px; }
+  .tf-btn{
+    flex:1; text-align:center; padding:8px; border-radius:8px; border:1px solid var(--line);
+    cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--muted);
+  }
+  .tf-btn:hover{ border-color:var(--glow); color:var(--text); }
+  .tf-btn.sel-correct{ background:rgba(123,219,143,0.15); border-color:var(--good); color:var(--good);}
+  .tf-btn.sel-wrong{ background:rgba(242,112,91,0.15); border-color:var(--danger); color:var(--danger);}
+
+  .scorebar{
+    position: sticky; top: 0; z-index: 5; background: rgba(10,15,26,0.9); backdrop-filter: blur(6px);
+    padding: 10px 14px; border-radius: 10px; border:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;
+    font-family:'IBM Plex Mono',monospace; font-size:13px;
+  }
+  .scorebar .val{ color: var(--amber); font-weight:600; }
+  .checkall{ margin-top: 6px; }
+
+  .section-title{ font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin: 26px 0 10px; font-family:'IBM Plex Mono',monospace; }
+
+  @media (max-width:600px){
+    .card-text{ font-size:16px; }
+    .lightbox-inner{ padding: 24px 16px; min-height: 210px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <div>
+      <div class="eyebrow">HAU · SNAMS · BS Radiologic Technology</div>
+      <h1>STS Lightbox Study Deck</h1>
+      <div class="sub">Science, Technology &amp; Society — Prelim Self-Test</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="flash">Flashcards</div>
+    <div class="tab" data-tab="blank">Fill-in-the-Blank</div>
+    <div class="tab" data-tab="mock">Mock Test</div>
+  </div>
+
+  <!-- FLASHCARDS -->
+  <div class="panel active" id="panel-flash">
+    <div class="lightbox">
+      <div class="lightbox-inner" id="flashInner" onclick="flipCard()">
+        <div class="card-label" id="flashLabel">CARD 1 · QUESTION</div>
+        <div class="card-text" id="flashText"></div>
+        <div class="hint">click to flip</div>
+      </div>
+    </div>
+    <div class="deck-controls">
+      <div class="btnrow">
+        <button class="ctrl" onclick="prevCard()">← Prev</button>
+        <button class="ctrl" onclick="flipCard()">Flip</button>
+        <button class="ctrl primary" onclick="nextCard()">Next →</button>
+      </div>
+      <div class="btnrow">
+        <button class="ctrl" onclick="shuffleCards()">Shuffle</button>
+        <span class="counter" id="flashCounter">1 / 48</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILL IN THE BLANK -->
+  <div class="panel" id="panel-blank">
+    <div class="scorebar">
+      <span>Fill-in-the-Blank Progress</span>
+      <span><span class="val" id="blankScore">0</span> / <span id="blankTotal">0</span> checked correct</span>
+    </div>
+    <div id="blankList"></div>
+    <button class="ctrl primary checkall" onclick="checkAllBlanks()">Check All Answers</button>
+  </div>
+
+  <!-- MOCK TEST -->
+  <div class="panel" id="panel-mock">
+    <div class="scorebar">
+      <span>Mock Test Score</span>
+      <span><span class="val" id="mockScore">0</span> / <span id="mockTotal">0</span></span>
+    </div>
+    <div class="section-title">Part I · Multiple Choice</div>
+    <div id="mcqList"></div>
+    <div class="section-title">Part II · True or False</div>
+    <div id="tfList"></div>
+    <button class="ctrl primary checkall" onclick="gradeMock()">Grade My Test</button>
+  </div>
+</div>
+
+<script>
+// ---------------- DATA ----------------
+const flashcards = [
+["What is the Latin root of the word 'science'?", "Scientia, meaning 'knowledge' (from scire, 'to know')."],
+["What is the Greek root of the word 'technology'?", "Techne, meaning 'art, skill, or cunning of hand.'"],
+["According to John Heilbron, what does science require besides discovering regularity in nature?", "Invention — devising techniques, abstractions, apparatuses, and organizations."],
+["According to Lewis Wolpert, is science value-free or value-laden?", "Value-free — science has no inherent moral or ethical value (unlike technology)."],
+["Who said 'a clear prescription for disaster' about society's dependence on science/tech?", "Carl Sagan."],
+["What does STS stand for and study?", "Science, Technology, and Society — bridges disciplines to evaluate risks/benefits of tech."],
+["Name one of the 2018 Reilly Center 'Top 10 Ethical Dilemmas.'", "e.g. Helix, Robot Priest, Ransomware, Social Credit Systems, Sentencing Software, etc."],
+["What are the 3 major branches of science?", "Social Sciences, Formal Sciences, and Natural Sciences."],
+["Give 2 examples of Formal Sciences.", "Logic, Mathematics (also Statistics, Computer Science)."],
+["What is the object of study of Natural Sciences?", "The Natural World — also called Pure Science."],
+["What is the object of study of Formal Sciences?", "Formal systems — rules and definitions; a 'tool' for all sciences."],
+["Who is called 'The Father of Medicine'?", "Hippocrates."],
+["Who was Pythagoras, and what did he believe about numbers?", "6th-century BCE mathematician; believed 4 and 7 had precise meanings in nature."],
+["Who was Alcmaeon known for?", "First to wonder about internal causes of illness (environment, nutrition, lifestyle)."],
+["According to Aristotle, what are the 4 elements?", "Fire, air, water, and earth."],
+["What is cuneiform, and who invented it?", "The Sumerians' wedge-shaped writing on clay tablets."],
+["What are the Four Great Inventions of Ancient China?", "Compass, Gunpowder, Paper making, and Printing."],
+["What is the earliest record of a Philippine language?", "The Laguna Copperplate Inscription (LCI)."],
+["What is a 'bahay kubo' made of?", "Wood, bamboo, and nipa palm; built on stilts."],
+["How old are the oldest known Balangay boats?", "The Butuan boats date back to 320 AD."],
+["What paradigm shift did the Copernican Revolution cause?", "From the geocentric model (Earth-centered) to heliocentric (Sun-centered)."],
+["What 1543 book did Copernicus publish?", "De Revolutionibus Orbium Coelestium ('On the Revolutions of the Celestial Spheres')."],
+["What is the Commentariolus?", "A 40-page outline of Copernicus's heliocentric model (1514)."],
+["Who was burned at the stake for teaching heliocentrism?", "Giordano Bruno."],
+["What did Galileo invent, and what did he discover?", "The telescope; discovered Jupiter's moons, confirming heliocentrism."],
+["What happened to Galileo because of his views?", "The Church placed him under house arrest."],
+["What did Kepler contribute?", "Planets move in elliptical orbits, sun at the center."],
+["What did Newton contribute?", "The Law of Gravitation."],
+["What theory did Darwin propose, and in what book?", "Evolution by natural selection, in 'On the Origin of Species' (1859)."],
+["Define Natural Selection.", "Organisms inherit/adapt traits favoring survival and reproduction."],
+["Why did the Church resist Darwin's theory?", "Organism design was seen as proof of an omniscient God (creationism)."],
+["Who developed psychoanalysis and the id/ego/superego model?", "Sigmund Freud."],
+["What are Freud's 3 structures of personality?", "Id, Ego, and Superego."],
+["Why is Freud's theory criticized?", "Lacks empirical evidence — e.g. Oedipus/Electra complexes are unsupported."],
+["What Philippine agency oversees national tech development?", "The Department of Science and Technology (DOST)."],
+["Which president prioritized S&T in the 1973 Constitution?", "Ferdinand Marcos (Article XV, Section 9(1))."],
+["Who invented banana ketchup?", "Maria Y. Orosa, Filipina food technologist."],
+["What agency did DOST replace in 1986?", "The National Science and Technology Authority (under Corazon Aquino)."],
+["Who invented the Bamboo Incubator, and why?", "Dr. Fe del Mundo; cheap, reproducible, works without electricity."],
+["Who discovered Erythromycin, and how?", "Dr. Abelardo Aguilar, from backyard soil bacteria, in 1949."],
+["Who developed Etherel, and for what purpose?", "Ramon Barba; replaced smudging to induce mango flowering."],
+["Who developed the first microprocessor-based calculator chip?", "Diosdado Banatao."],
+["What is Kulitan / Súlat Kapampángan?", "An indigenous Kapampangan writing system."],
+["Who founded Pampanga, and when?", "Martín de Goiti, in 1571."],
+["What does 'Pampanga' mean?", "'Riverside' (from Kapampangan 'pangpang ilog')."],
+["What years define the Japanese Occupation of the Philippines?", "1942–1945."],
+["What cultural influence did the Japanese period leave behind?", "Discipline/work ethic and appreciation for art & craftsmanship."],
+["What was the focus of science in the American colonial period?", "Agriculture, food processing, medicine, and pharmacy."],
+["Who observed the star Cassiopeia, aiding later astronomy?", "Tycho Brahe."],
+];
+
+const fillBlanks = [
+["Science originated from the Latin word ______, meaning 'to know.'", "scientia"],
+["Technology comes from the Greek root ______, meaning 'art, skill, or cunning of hand.'", "techne"],
+["______ is considered 'The Father of Medicine.'", "hippocrates"],
+["Aristotle declared four elements: fire, air, water, and ______.", "earth"],
+["The four great inventions of Ancient China include the compass, gunpowder, paper making, and ______.", "printing"],
+["The ______ Copperplate Inscription is the earliest known Philippine writing record.", "laguna"],
+["The traditional Filipino stilt house is called ______.", "bahay kubo"],
+["The oldest known Balangay boats date back to ______ AD.", "320"],
+["Copernicus published ______ in 1543.", "de revolutionibus orbium coelestium"],
+["The 40-page outline of Copernicus's model is called the ______.", "commentariolus"],
+["______ was burned at the stake for teaching heliocentrism.", "giordano bruno"],
+["Galileo invented the ______, observing Jupiter's moons.", "telescope"],
+["______ proved planets move in elliptical orbits.", "johannes kepler"],
+["Newton's contribution was the Law of ______.", "gravitation"],
+["Darwin published 'On the Origin of Species' in ______.", "1859"],
+["Darwin's theory states evolution happens through natural ______.", "selection"],
+["Freud is the father of ______.", "psychoanalysis"],
+["Freud's 3 structures of personality: id, ego, and ______.", "superego"],
+["The Oedipus/Electra complexes lack ______ data.", "empirical"],
+["The ______ oversees Philippine national tech development.", "dost"],
+["President ______ prioritized S&T in the 1973 Constitution.", "marcos"],
+["______ invented banana ketchup.", "maria orosa"],
+["Dr. ______ invented the Bamboo Incubator.", "fe del mundo"],
+["Dr. Aguilar discovered ______, an antibiotic, in 1949.", "erythromycin"],
+["Ramon Barba developed ______ to induce mango flowering.", "etherel"],
+["Diosdado Banatao developed the first single-chip 16-bit ______-based calculator.", "microprocessor"],
+["Pampanga was founded by ______ in 1571.", "martin de goiti"],
+["The Japanese Occupation lasted from 1942 to ______.", "1945"],
+["Kulitan is also known as Súlat ______.", "kapampangan"],
+];
+
+const mcq = [
+{q:"The word 'science' is derived from the Latin word:", choices:["Techne","Scientia","Scire only","Philosophia"], ans:1},
+{q:"Who defined science as requiring invention to describe natural regularities?", choices:["Carl Sagan","Lewis Wolpert","John Heilbron","Mark Zuckerberg"], ans:2},
+{q:"According to Lewis Wolpert, scientific knowledge is:", choices:["Value-laden","Value-free","Always dangerous","Identical to technology"], ans:1},
+{q:"Which branch of science serves as a 'tool' for all other sciences?", choices:["Natural Sciences","Social Sciences","Formal Sciences","Humanities"], ans:2},
+{q:"Who is known as 'The Father of Medicine'?", choices:["Pythagoras","Alcmaeon","Hippocrates","Aristotle"], ans:2},
+{q:"Which of these is NOT one of Aristotle's 4 elements?", choices:["Fire","Metal","Water","Earth"], ans:1},
+{q:"Cuneiform writing was invented by the:", choices:["Egyptians","Sumerians","Greeks","Romans"], ans:1},
+{q:"Which is NOT one of the Four Great Inventions of China?", choices:["Compass","Gunpowder","Steam Engine","Paper making"], ans:2},
+{q:"The Laguna Copperplate Inscription is significant because it is:", choices:["The first Bible translation","The earliest record of Philippine writing","A Spanish colonial law","A map of Luzon"], ans:1},
+{q:"The Copernican Revolution shifted the model of the universe from:", choices:["Heliocentric to geocentric","Geocentric to heliocentric","Flat to round Earth","Ptolemaic to Newtonian gravity only"], ans:1},
+{q:"'De Revolutionibus Orbium Coelestium' was published in:", choices:["1510","1514","1543","1600"], ans:2},
+{q:"Who was burned at the stake for supporting heliocentrism?", choices:["Galileo Galilei","Johannes Kepler","Giordano Bruno","Tycho Brahe"], ans:2},
+{q:"Galileo's key invention supporting heliocentrism was the:", choices:["Microscope","Telescope","Barometer","Compass"], ans:1},
+{q:"Who proposed elliptical planetary orbits?", choices:["Isaac Newton","Tycho Brahe","Johannes Kepler","Nicolaus Copernicus"], ans:2},
+{q:"Darwin's theory of evolution is best summarized as:", choices:["Divine creation","Survival of the fittest","Spontaneous generation","Intelligent design"], ans:1},
+{q:"Sigmund Freud is best known as the founder of:", choices:["Behaviorism","Psychoanalysis","Structuralism","Humanistic psychology"], ans:1},
+{q:"Which is NOT one of Freud's three personality structures?", choices:["Id","Ego","Superego","Libido"], ans:3},
+{q:"The Philippine agency for national tech development is the:", choices:["NCRP","DOST","PIDS","DTI"], ans:1},
+{q:"Which president declared S&T a priority in the 1973 Constitution?", choices:["Corazon Aquino","Fidel Ramos","Ferdinand Marcos","Joseph Estrada"], ans:2},
+{q:"Banana ketchup was invented by:", choices:["Fe del Mundo","Maria Y. Orosa","Abelardo Aguilar","Ramon Barba"], ans:1},
+{q:"The Bamboo Incubator was invented by:", choices:["Diosdado Banatao","Fe del Mundo","Leonardo Mejia Yu","Ramon Barba"], ans:1},
+{q:"Etherel, developed by Ramon Barba, was used to:", choices:["Cure infections","Induce mango flowering without smudging","Preserve fish","Purify water"], ans:1},
+{q:"Pampanga was founded in 1571 by:", choices:["Miguel Lopez de Legazpi","Martín de Goiti","Ferdinand Magellan","Juan de Salcedo"], ans:1},
+{q:"The Japanese Occupation of the Philippines lasted from:", choices:["1898–1901","1935–1941","1942–1945","1946–1950"], ans:2},
+];
+
+const tf = [
+["Science and technology are exactly the same thing, according to Lewis Wolpert.", false],
+["STS stands for Science, Technology, and Society and bridges disciplines.", true],
+["Formal Sciences study the natural world directly.", false],
+["Hippocrates is known as 'The Father of Medicine.'", true],
+["Aristotle's theories relied heavily on experimentation.", false],
+["The Sumerians invented cuneiform writing.", true],
+["Copernicus's heliocentric model placed Earth at the center of the universe.", false],
+["Giordano Bruno was placed under house arrest for heliocentrism.", false],
+["Johannes Kepler proposed planets move in perfect circles.", false],
+["The Church fully accepted Darwin's theory without objection.", false],
+["Freud's Oedipus and Electra complexes are strongly supported by empirical data.", false],
+["The DOST replaced the National Science and Technology Authority in 1986.", true],
+["Maria Y. Orosa invented erythromycin.", false],
+["Diosdado Banatao created the first system logic chip sets in 1981.", true],
+["Pampanga was founded by Martín de Goiti in 1571.", true],
+];
+
+// ---------------- FLASHCARD LOGIC ----------------
+let order = flashcards.map((_,i)=>i);
+let idx = 0, flipped = false;
+
+function renderCard(){
+  const [q,a] = flashcards[order[idx]];
+  document.getElementById('flashLabel').textContent = `CARD ${idx+1} · ${flipped ? 'ANSWER' : 'QUESTION'}`;
+  const el = document.getElementById('flashText');
+  el.textContent = flipped ? a : q;
+  el.className = 'card-text' + (flipped ? ' answer' : '');
+  document.getElementById('flashCounter').textContent = `${idx+1} / ${flashcards.length}`;
+}
+function flipCard(){ flipped = !flipped; renderCard(); }
+function nextCard(){ idx = (idx+1) % order.length; flipped=false; renderCard(); }
+function prevCard(){ idx = (idx-1+order.length) % order.length; flipped=false; renderCard(); }
+function shuffleCards(){
+  for(let i=order.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [order[i],order[j]]=[order[j],order[i]]; }
+  idx=0; flipped=false; renderCard();
+}
+renderCard();
+
+// ---------------- FILL BLANK LOGIC ----------------
+const blankList = document.getElementById('blankList');
+fillBlanks.forEach((f,i)=>{
+  const div = document.createElement('div');
+  div.className='qcard';
+  div.innerHTML = `<div class="qnum">ITEM ${i+1}</div>
+    <div class="qtext">${f[0]}</div>
+    <input type="text" id="blank-${i}" placeholder="Type your answer..." />
+    <div class="feedback" id="fb-blank-${i}"></div>`;
+  blankList.appendChild(div);
+});
+document.getElementById('blankTotal').textContent = fillBlanks.length;
+
+function normalize(s){ return s.toLowerCase().replace(/[^a-z0-9 ]/g,'').trim(); }
+function checkAllBlanks(){
+  let score = 0;
+  fillBlanks.forEach((f,i)=>{
+    const input = document.getElementById(`blank-${i}`);
+    const fb = document.getElementById(`fb-blank-${i}`);
+    const userVal = normalize(input.value);
+    const correctVal = normalize(f[1]);
+    const isRight = userVal.length>0 && (correctVal.includes(userVal) || userVal.includes(correctVal));
+    if(isRight){ score++; fb.textContent = '✓ Correct'; fb.className='feedback good'; }
+    else { fb.textContent = `✗ Answer: ${f[1]}`; fb.className='feedback bad'; }
+  });
+  document.getElementById('blankScore').textContent = score;
+}
+
+// ---------------- MOCK TEST LOGIC ----------------
+const mcqList = document.getElementById('mcqList');
+mcq.forEach((m,i)=>{
+  const div = document.createElement('div');
+  div.className='qcard';
+  let choicesHtml = m.choices.map((c,ci)=>`
+    <label class="choice" id="mcq-${i}-${ci}">
+      <input type="radio" name="mcq-${i}" value="${ci}" /> ${c}
+    </label>`).join('');
+  div.innerHTML = `<div class="qnum">ITEM ${i+1}</div><div class="qtext">${m.q}</div>${choicesHtml}
+    <div class="feedback" id="fb-mcq-${i}"></div>`;
+  mcqList.appendChild(div);
+});
+document.getElementById('mockTotal').textContent = (mcq.length + tf.length);
+
+const tfList = document.getElementById('tfList');
+tf.forEach((t,i)=>{
+  const div = document.createElement('div');
+  div.className='qcard';
+  div.innerHTML = `<div class="qnum">ITEM ${mcq.length + i + 1}</div><div class="qtext">${t[0]}</div>
+    <div class="tf-row">
+      <div class="tf-btn" id="tf-${i}-true" onclick="selectTF(${i},true)">TRUE</div>
+      <div class="tf-btn" id="tf-${i}-false" onclick="selectTF(${i},false)">FALSE</div>
+    </div>
+    <div class="feedback" id="fb-tf-${i}"></div>`;
+  tfList.appendChild(div);
+});
+
+let tfAnswers = {};
+function selectTF(i, val){
+  tfAnswers[i] = val;
+  document.getElementById(`tf-${i}-true`).classList.remove('sel-correct','sel-wrong');
+  document.getElementById(`tf-${i}-false`).classList.remove('sel-correct','sel-wrong');
+  const btn = document.getElementById(`tf-${i}-${val}`);
+  btn.style.outline = '2px solid var(--glow)';
+  setTimeout(()=>{ btn.style.outline='none'; }, 200);
+}
+
+function gradeMock(){
+  let score = 0;
+  mcq.forEach((m,i)=>{
+    const chosen = document.querySelector(`input[name="mcq-${i}"]:checked`);
+    const fb = document.getElementById(`fb-mcq-${i}`);
+    for(let ci=0; ci<m.choices.length; ci++){
+      document.getElementById(`mcq-${i}-${ci}`).classList.remove('correct','wrong');
+    }
+    document.getElementById(`mcq-${i}-${m.ans}`).classList.add('correct');
+    if(chosen){
+      const val = parseInt(chosen.value);
+      if(val === m.ans){ score++; fb.textContent='✓ Correct'; fb.className='feedback good'; }
+      else { document.getElementById(`mcq-${i}-${val}`).classList.add('wrong'); fb.textContent='✗ Incorrect'; fb.className='feedback bad'; }
+    } else { fb.textContent = '✗ Not answered — correct choice highlighted above'; fb.className='feedback bad'; }
+  });
+  tf.forEach((t,i)=>{
+    const fb = document.getElementById(`fb-tf-${i}`);
+    const userAns = tfAnswers[i];
+    document.getElementById(`tf-${i}-true`).classList.remove('sel-correct','sel-wrong');
+    document.getElementById(`tf-${i}-false`).classList.remove('sel-correct','sel-wrong');
+    const correctKey = t[1] ? 'true' : 'false';
+    document.getElementById(`tf-${i}-${correctKey}`).classList.add('sel-correct');
+    if(userAns === undefined){ fb.textContent='✗ Not answered'; fb.className='feedback bad'; }
+    else if(userAns === t[1]){ score++; fb.textContent='✓ Correct'; fb.className='feedback good'; }
+    else { const wrongKey = userAns ? 'true':'false'; document.getElementById(`tf-${i}-${wrongKey}`).classList.add('sel-wrong'); fb.textContent='✗ Incorrect'; fb.className='feedback bad'; }
+  });
+  document.getElementById('mockScore').textContent = score;
+  document.querySelector('#panel-mock .scorebar').scrollIntoView({behavior:'smooth'});
+}
+
+// ---------------- TABS ----------------
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
